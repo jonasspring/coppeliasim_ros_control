@@ -1,5 +1,5 @@
-#include "vrepRosControl_server.h"
-#include "../v_repLib.h"
+#include "simExtRosControl_server.h"
+#include "simLib.h"
 
 #include <ros/callback_queue.h>
 #include <controller_manager/controller_manager.h>
