@@ -9,13 +9,13 @@
 
 std::string simExtRosControlSimple_pluginName = "simExtRosControlSimple";
 
-LIBRARY simLib; // the V-REP library that we will dynamically load and bind
+LIBRARY simLib; // the coppeliasim library that we will dynamically load and bind
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // This is the plugin start routine (called just once, just after the plugin was loaded):
 SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
 {
-	// Dynamically load and bind V-REP functions:
+	// Dynamically load and bind coppeliasim functions:
 	// ******************************************
 	// 1. Figure out this plugin's directory:
 	char curDirAndFile[1024];
@@ -23,34 +23,34 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
 
 	std::string currentDirAndPath(curDirAndFile);
 
-	// 2. Append the V-REP library's name:
+	// 2. Append the coppeliasim library's name:
 	std::string temp(currentDirAndPath);
 	temp+="/libcoppeliaSim.so";
 
-	// 3. Load the V-REP library:
+	// 3. Load the coppeliasim library:
 	simLib=loadSimLibrary(temp.c_str());
 	if (simLib==NULL)
 	{
-        std::cout << "Error, could not find or correctly load the V-REP library. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
-		return(0); // Means error, V-REP will unload this plugin
+        std::cout << "Error, could not find or correctly load the coppeliasim library. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
+		return(0); // Means error, coppeliasim will unload this plugin
 	}
 	if (getSimProcAddresses(simLib)==0)
 	{
-        std::cout << "Error, could not find all required functions in the V-REP library. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
+        std::cout << "Error, could not find all required functions in the coppeliasim library. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
 		unloadSimLibrary(simLib);
-		return(0); // Means error, V-REP will unload this plugin
+		return(0); // Means error, coppeliasim will unload this plugin
 	}
 	// ******************************************
 
-	// Check the version of V-REP:
+	// Check the version of coppeliasim:
 	// ******************************************
-	int vrepVer;
-	simGetIntegerParameter(sim_intparam_program_version,&vrepVer);
-	if (vrepVer<30102) // if V-REP version is smaller than 3.01.02
+	int simVer;
+	simGetIntegerParameter(sim_intparam_program_version,&simVer);
+	if (simVer<30102) // if coppeliasim version is smaller than 3.01.02
 	{
-        std::cout << "Sorry, your V-REP copy is somewhat old. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
+        std::cout << "Sorry, your coppeliasim copy is somewhat old. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
 		unloadSimLibrary(simLib);
-		return(0); // Means error, V-REP will unload this plugin
+		return(0); // Means error, coppeliasim will unload this plugin
 	}
 	// ******************************************
 	
@@ -66,7 +66,7 @@ SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// This is the plugin end routine (called just once, when V-REP is ending, i.e. releasing this plugin):
+// This is the plugin end routine (called just once, when coppeliasim is ending, i.e. releasing this plugin):
 SIM_DLLEXPORT void simEnd()
 {
 	ROS_server::shutDown();	// shutdown the ROS_server
@@ -75,7 +75,7 @@ SIM_DLLEXPORT void simEnd()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// This is the plugin messaging routine (i.e. V-REP calls this function very often, with various messages):
+// This is the plugin messaging routine (i.e. coppeliasim calls this function very often, with various messages):
 SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,int* replyData)
 { 
 	// This is called quite often. Just watch out for messages/events you want to handle
@@ -85,7 +85,7 @@ SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,i
 	simSetIntegerParameter(sim_intparam_error_report_mode,sim_api_errormessage_ignore);
 	void* retVal=NULL;
 
-	// Here we can intercept many messages from V-REP (actually callbacks). Only the most important messages are listed here:
+	// Here we can intercept many messages from coppeliasim (actually callbacks). Only the most important messages are listed here:
 
 	if (message==sim_message_eventcallback_instancepass)
 	{ 
