@@ -9,7 +9,7 @@ namespace MR
 {
 
 
-std::string MyRobot_vrepHW::sm_jointsName[MR_JOINTS_NUM] = {
+std::string MyRobot_simHW::sm_jointsName[MR_JOINTS_NUM] = {
     "front_left_wheel_joint",
     "back_left_wheel_joint",
     "back_right_wheel_joint",
@@ -18,7 +18,7 @@ std::string MyRobot_vrepHW::sm_jointsName[MR_JOINTS_NUM] = {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-MyRobot_vrepHW::MyRobot_vrepHW() :
+MyRobot_simHW::MyRobot_simHW() :
     hardware_interface::RobotHW()
 {
     // Init arrays m_cmd[], m_pos[], m_vel[], m_eff[].
@@ -32,35 +32,35 @@ MyRobot_vrepHW::MyRobot_vrepHW() :
 
     // Init and get handles of the joints to control.
     for (int i = 0; i < MR_JOINTS_NUM; ++i)
-        m_vrepJointsHandle[i] = -1;
+        m_simJointsHandle[i] = -1;
 
     // Register joint interfaces.
     registerHardwareInterfaces();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool MyRobot_vrepHW::init()
+bool MyRobot_simHW::init()
 {
     // Get joint handles.
     for (int i = 0; i < MR_JOINTS_NUM; ++i)
     {
-        int vrepJointsHandle = simGetObjectHandle(sm_jointsName[i].c_str());
+        int simJointsHandle = simGetObjectHandle(sm_jointsName[i].c_str());
 
-        if (vrepJointsHandle == -1)
+        if (simJointsHandle == -1)
         {
             ROS_ERROR_STREAM("MR robot interface not able to get handle for '" << sm_jointsName[i] << "'." << std::endl);
 
             return false;
         }
 
-        m_vrepJointsHandle[i] = vrepJointsHandle;
+        m_simJointsHandle[i] = simJointsHandle;
     }
 
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MyRobot_vrepHW::registerHardwareInterfaces()
+void MyRobot_simHW::registerHardwareInterfaces()
 {
     for (int i = 0; i < MR_JOINTS_NUM; ++i)
     {
@@ -78,7 +78,7 @@ void MyRobot_vrepHW::registerHardwareInterfaces()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool MyRobot_vrepHW::read()
+bool MyRobot_simHW::read()
 {
     for (int i = 0; i < MR_JOINTS_NUM; ++i)
     {
@@ -86,9 +86,9 @@ bool MyRobot_vrepHW::read()
               vel,
               eff;
 
-        if (simGetJointPosition(m_vrepJointsHandle[i], &pos) == -1 ||
-            simGetObjectFloatParameter(m_vrepJointsHandle[i], 2012, &vel) == -1 || // Velocity.
-            simGetJointForce(m_vrepJointsHandle[i], &eff) == -1)
+        if (simGetJointPosition(m_simJointsHandle[i], &pos) == -1 ||
+            simGetObjectFloatParameter(m_simJointsHandle[i], 2012, &vel) == -1 || // Velocity.
+            simGetJointForce(m_simJointsHandle[i], &eff) == -1)
         {
             ROS_ERROR_STREAM("MR robot interface not able to get state for '" << sm_jointsName[i] << "'." << std::endl);
 
@@ -104,11 +104,11 @@ bool MyRobot_vrepHW::read()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool MyRobot_vrepHW::write()
+bool MyRobot_simHW::write()
 {
     for (int i = 0; i < MR_JOINTS_NUM; ++i)
     {
-        if (simSetJointTargetVelocity(m_vrepJointsHandle[i], m_cmd[i]) == -1)
+        if (simSetJointTargetVelocity(m_simJointsHandle[i], m_cmd[i]) == -1)
         {
             ROS_ERROR_STREAM("MR robot interface not able to get state for '" << sm_jointsName[i] << "'." << std::endl);
 
