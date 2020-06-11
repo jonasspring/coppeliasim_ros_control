@@ -17,7 +17,7 @@ ros::NodeHandle* ROS_server::sm_node = NULL;
  ros::Subscriber ROS_server::sm_addStatusBarMessage_subscriber;
 
 // Control.
-MR::MyRobot_vrepHW * ROS_server::sm_myRobotHw = 0;
+MR::MyRobot_simHW * ROS_server::sm_myRobotHw = 0;
 controller_manager::ControllerManager * ROS_server::sm_ctrlManager = 0;
 
 ros::CallbackQueue * ROS_server::sm_rosControlCallbackQueue = 0;
@@ -40,18 +40,18 @@ bool ROS_server::initialize()
     // Control.
     // NOTE: we create a callback queue only handling ros_control callbacks (not the standard callbacks which remain
     //       handled by the global callback queue). The ros_control callback queue is spinned in a thread of its own
-    //       (but the standard messages remain handled by ros::spinOnce() in vrep's main thread).
+    //       (but the standard messages remain handled by ros::spinOnce() in coppeliasim's main thread).
     //       We adopt this architecture because:
     //          * by design ros_control needs to have the control update and the control callbacks handled in separate
     //            threads,
-    //          * by design vrep needs to have the standard callbacks handled into the main thread,
-    //          * by design vrep's regular API is not thread safe (and thus accessing the API from a secondary thread as
+    //          * by design coppeliasim needs to have the standard callbacks handled into the main thread,
+    //          * by design coppeliasim's regular API is not thread safe (and thus accessing the API from a secondary thread as
     //            well as from the main thread, may break things).
     sm_rosControlCallbackQueue = new ros::CallbackQueue();
     assert(sm_rosControlCallbackQueue);
     sm_node->setCallbackQueue(sm_rosControlCallbackQueue);
 
-    sm_myRobotHw = new MR::MyRobot_vrepHW();
+    sm_myRobotHw = new MR::MyRobot_simHW();
     assert(sm_myRobotHw);
 
     sm_ctrlManager = new controller_manager::ControllerManager(sm_myRobotHw, *sm_node);
@@ -117,22 +117,22 @@ void ROS_server::mainScriptAboutToBeCalled()
     assert(sm_ctrlManager);
 
     // Update ros_control ControllerManager.
-    float simulationTime_vrep = simGetSimulationTime();
-    static float simulationTime_km1_vrep = simulationTime_vrep;
+    float simulationTime_sim = simGetSimulationTime();
+    static float simulationTime_km1_sim = simulationTime_sim;
 
     bool isSimulationRunning = simGetSimulationState() == sim_simulation_advancing_running;
 
-    if (simulationTime_km1_vrep != simulationTime_vrep && isSimulationRunning)
+    if (simulationTime_km1_sim != simulationTime_sim && isSimulationRunning)
     {
-        ros::Time simulationTime;     simulationTime.fromSec(simulationTime_vrep);
-        ros::Time simulationTime_km1; simulationTime_km1.fromSec(simulationTime_km1_vrep);
+        ros::Time simulationTime;     simulationTime.fromSec(simulationTime_sim);
+        ros::Time simulationTime_km1; simulationTime_km1.fromSec(simulationTime_km1_sim);
 
         sm_myRobotHw->read();
         sm_ctrlManager->update(simulationTime, simulationTime - simulationTime_km1);
         sm_myRobotHw->write();
     }
 
-    simulationTime_km1_vrep = simulationTime_vrep;
+    simulationTime_km1_sim = simulationTime_sim;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -160,7 +160,7 @@ void ROS_server::spinOnce()
     ros::spinOnce(); //check what happened if thgis commented as the HWroscontrol has asyn spinner, so it should not be affected
 
 	//Handle all streaming (publishers)
-    // streamAllData();
+    streamAllData();
 
 	// Restore previous error report mode:
     simSetIntegerParameter(sim_intparam_error_report_mode,errorModeSaved);
