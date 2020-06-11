@@ -1,6 +1,5 @@
-#include "MyRobot_vrepHW.h"
-
-#include "../v_repLib.h"
+#include "MyRobot_simHW.h"
+#include "simLib.h"
 
 #include <string>
 #include <iostream>
