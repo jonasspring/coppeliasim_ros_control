@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(coppeliasim_ros_control)
 
-find_package(catkin REQUIRED COMPONENTS roscpp vrep_common controller_manager)
+find_package(catkin REQUIRED COMPONENTS roscpp vrep_common vrep_skeleton_msg_and_srv controller_manager)
 
 ################################################
 # List sources.
