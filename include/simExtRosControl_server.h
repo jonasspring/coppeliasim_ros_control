@@ -38,26 +38,11 @@ private:
     ROS_server() {} // Make this class non-instantiable.
 
     static ros::NodeHandle* sm_node;
-
     static void spinOnce();
-
-    // Services:
-    static bool displayText_service(vrep_skeleton_msg_and_srv::displayText::Request &req,vrep_skeleton_msg_and_srv::displayText::Response &res);
-    static ros::ServiceServer sm_displayText_server;
-
-    // Publishers:
-    static void streamAllData();
-    static ros::Publisher sm_objectCount_publisher;
-
-    // Subscribers:
-    static void addStatusbarMessage_callback(const std_msgs::String::ConstPtr& msg);
-    static ros::Subscriber sm_addStatusBarMessage_subscriber;
 
     // Control.
     static ros::CallbackQueue * sm_rosControlCallbackQueue;
-
     static MR::MyRobot_simHW * sm_myRobotHw;
     static controller_manager::ControllerManager * sm_ctrlManager;
-
     static ros::AsyncSpinner * sm_spinner;
 };
