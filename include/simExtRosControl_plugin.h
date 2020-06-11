@@ -1,8 +1,13 @@
 #pragma once
 
-#define VREP_DLLEXPORT extern "C"
+#ifdef _WIN32
+    #define SIM_DLLEXPORT extern "C" __declspec(dllexport)
+#else
+    #define SIM_DLLEXPORT extern "C"
+#endif
 
-// The 3 required entry points of the V-REP plugin:
-VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer,int reservedInt);
-VREP_DLLEXPORT void v_repEnd();
-VREP_DLLEXPORT void* v_repMessage(int message,int* auxiliaryData,void* customData,int* replyData);
+
+// The 3 required entry points of the CoppelisSim plugin:
+SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt);
+SIM_DLLEXPORT void simEnd();
+SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,int* replyData);
