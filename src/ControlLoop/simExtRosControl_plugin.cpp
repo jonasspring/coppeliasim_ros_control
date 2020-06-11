@@ -1,19 +1,19 @@
-#include "../v_repLib.h"
-#include "vrepRosControl_plugin.h"
-#include "vrepRosControl_server.h"
+#include "simLib.h"
+#include "simExtRosControl_server.h"
+#include "simExtRosControl_plugin.h"
 
 #include "ros/ros.h"
 #include <iostream>
 
 #define PLUGIN_VERSION 1
 
-std::string vrepRosControl_pluginName = "vrepRosControl";
+std::string simExtRosControlSimple_pluginName = "simExtRosControlSimple";
 
-LIBRARY vrepLib; // the V-REP library that we will dynamically load and bind
+LIBRARY simLib; // the V-REP library that we will dynamically load and bind
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // This is the plugin start routine (called just once, just after the plugin was loaded):
-VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer,int reservedInt)
+SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
 {
 	// Dynamically load and bind V-REP functions:
 	// ******************************************
@@ -25,19 +25,19 @@ VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer,int reservedInt)
 
 	// 2. Append the V-REP library's name:
 	std::string temp(currentDirAndPath);
-	temp+="/libv_rep.so";
+	temp+="/libcoppeliaSim.so";
 
 	// 3. Load the V-REP library:
-	vrepLib=loadVrepLibrary(temp.c_str());
-	if (vrepLib==NULL)
+	simLib=loadSimLibrary(temp.c_str());
+	if (simLib==NULL)
 	{
-        std::cout << "Error, could not find or correctly load the V-REP library. Cannot start '" << vrepRosControl_pluginName << "' plugin.\n";
+        std::cout << "Error, could not find or correctly load the V-REP library. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
 		return(0); // Means error, V-REP will unload this plugin
 	}
-	if (getVrepProcAddresses(vrepLib)==0)
+	if (getSimProcAddresses(simLib)==0)
 	{
-        std::cout << "Error, could not find all required functions in the V-REP library. Cannot start '" << vrepRosControl_pluginName << "' plugin.\n";
-		unloadVrepLibrary(vrepLib);
+        std::cout << "Error, could not find all required functions in the V-REP library. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
+		unloadSimLibrary(simLib);
 		return(0); // Means error, V-REP will unload this plugin
 	}
 	// ******************************************
@@ -48,8 +48,8 @@ VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer,int reservedInt)
 	simGetIntegerParameter(sim_intparam_program_version,&vrepVer);
 	if (vrepVer<30102) // if V-REP version is smaller than 3.01.02
 	{
-        std::cout << "Sorry, your V-REP copy is somewhat old. Cannot start '" << vrepRosControl_pluginName << "' plugin.\n";
-		unloadVrepLibrary(vrepLib);
+        std::cout << "Sorry, your V-REP copy is somewhat old. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
+		unloadSimLibrary(simLib);
 		return(0); // Means error, V-REP will unload this plugin
 	}
 	// ******************************************
@@ -58,7 +58,7 @@ VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer,int reservedInt)
 	// Initialize the ROS part:
 	if(!ROS_server::initialize()) 
 	{
-        std::cout << "ROS master is not running. Cannot start '" << vrepRosControl_pluginName << "' plugin.\n";
+        std::cout << "ROS master is not running. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
 		return (0); //If the master is not running then the plugin is not loaded.
 	}
 
@@ -67,16 +67,16 @@ VREP_DLLEXPORT unsigned char v_repStart(void* reservedPointer,int reservedInt)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // This is the plugin end routine (called just once, when V-REP is ending, i.e. releasing this plugin):
-VREP_DLLEXPORT void v_repEnd()
+SIM_DLLEXPORT void simEnd()
 {
 	ROS_server::shutDown();	// shutdown the ROS_server
 
-	unloadVrepLibrary(vrepLib); // release the library
+	unloadSimLibrary(simLib); // release the library
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // This is the plugin messaging routine (i.e. V-REP calls this function very often, with various messages):
-VREP_DLLEXPORT void* v_repMessage(int message,int* auxiliaryData,void* customData,int* replyData)
+SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,int* replyData)
 { 
 	// This is called quite often. Just watch out for messages/events you want to handle
 	// Keep following 4 lines at the beginning and unchanged:
