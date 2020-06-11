@@ -7,15 +7,6 @@
 
 ros::NodeHandle* ROS_server::sm_node = NULL;
 
-// Services:
- ros::ServiceServer ROS_server::sm_displayText_server;
-
-// Publishers:
- ros::Publisher ROS_server::sm_objectCount_publisher;
-
-// Subscribers:
- ros::Subscriber ROS_server::sm_addStatusBarMessage_subscriber;
-
 // Control.
 MR::MyRobot_simHW * ROS_server::sm_myRobotHw = 0;
 controller_manager::ControllerManager * ROS_server::sm_ctrlManager = 0;
@@ -61,14 +52,6 @@ bool ROS_server::initialize()
     assert(sm_spinner);
     sm_spinner->start();
 
-	// Enable the services:
-     sm_displayText_server = sm_node->advertiseService("displayText",ROS_server::displayText_service);
-
-	// Enable the publishers:
-     sm_objectCount_publisher = sm_node->advertise<std_msgs::Int32>("objectCount",1);
-
-	// Enable the subscribers:
-     sm_addStatusBarMessage_subscriber = sm_node->subscribe("addStatusbarMessage",1,&ROS_server::addStatusbarMessage_callback);
 
 	return(true);
 }
@@ -86,15 +69,6 @@ void ROS_server::shutDown()
     delete sm_ctrlManager;
     delete sm_myRobotHw;
     delete sm_rosControlCallbackQueue;
-
-	// Disable the subscribers:
-     sm_addStatusBarMessage_subscriber.shutdown();
-
-	// Disable the publishers:
-     sm_objectCount_publisher.shutdown();
-
-	// Disable the services:
-     sm_displayText_server.shutdown();
 
 	// Shut down:
 	ros::shutdown();
@@ -159,38 +133,7 @@ void ROS_server::spinOnce()
 	//Process all requested services and topic subscriptions
     ros::spinOnce(); //check what happened if thgis commented as the HWroscontrol has asyn spinner, so it should not be affected
 
-	//Handle all streaming (publishers)
-    streamAllData();
-
 	// Restore previous error report mode:
     simSetIntegerParameter(sim_intparam_error_report_mode,errorModeSaved);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Services:
- bool ROS_server::displayText_service(vrep_skeleton_msg_and_srv::displayText::Request &req,vrep_skeleton_msg_and_srv::displayText::Response &res)
- {
- 	res.dialogHandle=simDisplayDialog("Message from a ROS node",req.textToDisplay.c_str(),sim_dlgstyle_message,NULL,NULL,NULL,NULL);
-	return true;
- }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Publishers:
- void ROS_server::streamAllData()
- {
- 	// Take care of publishers here (i.e. have them publish their data):
- 	std_msgs::Int32 objCnt;
- 	int index=0;
- 	int h=0;
-	while (h>=0)
- 		h=simGetObjects(index++,sim_handle_all);
- 	objCnt.data=index-1;
-     sm_objectCount_publisher.publish(objCnt);
- }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Subscribers:
- void ROS_server::addStatusbarMessage_callback(const std_msgs::String::ConstPtr& msg)
- {
- 	simAddStatusbarMessage(msg->data.c_str());
- }
