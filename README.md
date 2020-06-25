@@ -1,16 +1,11 @@
-# coppeliasim_ros_control
-========================
-
+## coppeliasim_ros_control
 This package contains a ros_control back end for coppeliasim (i.e. ~ gazebo_ros_control but for coppeliasim).
-# mobile_manipulator branch:
-integrates ros_control in coppeliasim for mobile_manipulator (boxer + panda).
-
-## Dependencies:
+### Dependencies:
   * [vrep_ros_packages:](https://github.com/jhu-lcsr/vrep_ros_packages)
    - vrep_common
    - vrep_skeleton_msg_and_srv
   
-## HOW TO RUN IT:
+### HOW TO RUN IT:
 ### general plugin/master branch:
    * clone the repository in your <workspace>/src folder
    * build the newly cloned package
