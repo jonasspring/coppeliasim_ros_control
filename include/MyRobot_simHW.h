@@ -1,54 +1,46 @@
-#pragma once
-
-#include <hardware_interface/joint_command_interface.h>
-#include <hardware_interface/joint_state_interface.h>
-#include <hardware_interface/robot_hw.h>
-
-
-namespace MR
+namespace coppeliasim_ros_control
 {
-
-
-enum MrJointsEnum
-{
-    FRONT_LEFT_WHEEL_JOINT = 0,
-    BACK_LEFT_WHEEL_JOINT,
-    BACK_RIGHT_WHEEL_JOINT,
-    FRONT_RIGHT_WHEEL_JOINT,
-
-    MR_JOINTS_NUM
-};
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief This is the hardware interface for MyRobot simulated in coppeliasim.
-class MyRobot_simHW : public hardware_interface::RobotHW
-{
-public:
-    MyRobot_simHW();
-
-    bool init();
-
+  /// \brief This is the hardware interface for MyRobot simulated in sim.
+  class RobotSimHW : public hardware_interface::RobotHW
+  {
+  public:
+    RobotSimHW();
+    bool init(ros::NodeHandle* model_nh);
     bool read();
     bool write();
 
-protected:
-    static std::string sm_jointsName[MR_JOINTS_NUM];
+    // Get the URDF XML from the parameter server
+    static std::string getURDF(ros::NodeHandle* nh, std::string param_name);
 
-    // sim handles.
-    int m_simJointsHandle[MR_JOINTS_NUM];
+    // Get Transmissions from the URDF
+    static bool parseTransmissionsFromURDF(const std::string& urdf_string,  
+                    std::vector<transmission_interface::TransmissionInfo> &transmissions);
 
-    // Interfaces.
-    double m_cmd[MR_JOINTS_NUM];
-    double m_pos[MR_JOINTS_NUM];
-    double m_vel[MR_JOINTS_NUM];
-    double m_eff[MR_JOINTS_NUM];
+  protected:
+    enum ControlMethod {EFFORT, POSITION, POSITION_PID, VELOCITY, VELOCITY_PID};
 
-    hardware_interface::JointStateInterface m_jointState_interface;
-    hardware_interface::VelocityJointInterface m_jointVelocity_interface;
 
-    void registerHardwareInterfaces();
-};
+    unsigned int n_dof_;
+    hardware_interface::JointStateInterface    js_interface_;
+    hardware_interface::EffortJointInterface   ej_interface_;
+    hardware_interface::PositionJointInterface pj_interface_;
+    hardware_interface::VelocityJointInterface vj_interface_;
+
+    std::vector<int> sim_joints_;
+
+    std::vector<double> joint_position_;
+    std::vector<double> joint_velocity_;
+    std::vector<double> joint_effort_;
+
+    std::vector<double> joint_effort_command_;
+    std::vector<double> joint_position_command_;
+    std::vector<double> joint_velocity_command_;
+    std::vector<double> last_joint_position_command_;
+
+    std::vector<std::string> joint_names_;
+    std::vector<ControlMethod> joint_control_methods_;
+    std::vector<control_toolbox::Pid> pid_controllers_;
+  };
 
 
 } // namespace MR.
