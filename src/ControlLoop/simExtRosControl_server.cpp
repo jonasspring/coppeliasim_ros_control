@@ -4,11 +4,13 @@
 
 #include <ros/callback_queue.h>
 #include <controller_manager/controller_manager.h>
+#include <ros/console.h>
+
 
 ros::NodeHandle* ROS_server::sm_node = NULL;
 
-// Control.
-MR::MyRobot_simHW * ROS_server::sm_myRobotHw = 0;
+// Ros Control
+coppeliasim_ros_control::RobotSimHW * ROS_server::sm_myRobotHw = 0;
 controller_manager::ControllerManager * ROS_server::sm_ctrlManager = 0;
 
 ros::CallbackQueue * ROS_server::sm_rosControlCallbackQueue = 0;
@@ -18,13 +20,15 @@ ros::AsyncSpinner * ROS_server::sm_spinner = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool ROS_server::initialize()
 {
-	int argc = 0;
-	char** argv = NULL;
-    ros::init(argc,argv,"MR_RosControl");
-
-	if(!ros::master::check())
-		return(false);
-	
+    int argc = 0;
+    char** argv = NULL;
+    ros::init(argc,argv,"coppeliasim_ros_control");
+    if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) )
+        ros::console::notifyLoggerLevelsChanged();
+    
+    if(!ros::master::check())
+        return(false);
+    
     sm_node = new ros::NodeHandle;
     assert(sm_node);
 
@@ -42,7 +46,7 @@ bool ROS_server::initialize()
     assert(sm_rosControlCallbackQueue);
     sm_node->setCallbackQueue(sm_rosControlCallbackQueue);
 
-    sm_myRobotHw = new MR::MyRobot_simHW();
+    sm_myRobotHw = new coppeliasim_ros_control::RobotSimHW();
     assert(sm_myRobotHw);
 
     sm_ctrlManager = new controller_manager::ControllerManager(sm_myRobotHw, *sm_node);
@@ -53,7 +57,7 @@ bool ROS_server::initialize()
     sm_spinner->start();
 
 
-	return(true);
+    return(true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,8 +74,8 @@ void ROS_server::shutDown()
     delete sm_myRobotHw;
     delete sm_rosControlCallbackQueue;
 
-	// Shut down:
-	ros::shutdown();
+    // Shut down:
+    ros::shutdown();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -86,14 +90,12 @@ void ROS_server::instancePass()
 void ROS_server::mainScriptAboutToBeCalled()
 { // When simulation is running, we "spinOnce" here:
     spinOnce();
-
     assert(sm_myRobotHw);
     assert(sm_ctrlManager);
 
     // Update ros_control ControllerManager.
     float simulationTime_sim = simGetSimulationTime();
     static float simulationTime_km1_sim = simulationTime_sim;
-
     bool isSimulationRunning = simGetSimulationState() == sim_simulation_advancing_running;
 
     if (simulationTime_km1_sim != simulationTime_sim && isSimulationRunning)
@@ -102,7 +104,7 @@ void ROS_server::mainScriptAboutToBeCalled()
         ros::Time simulationTime_km1; simulationTime_km1.fromSec(simulationTime_km1_sim);
 
         sm_myRobotHw->read();
-        sm_ctrlManager->update(simulationTime, simulationTime - simulationTime_km1);
+        sm_ctrlManager->update(simulationTime, simulationTime - simulationTime_km1); // third paramtere: setting controller 
         sm_myRobotHw->write();
     }
 
@@ -113,8 +115,10 @@ void ROS_server::mainScriptAboutToBeCalled()
 void ROS_server::simulationAboutToStart()
 {
     assert(sm_myRobotHw);
+    // sm_myRobotHw->init();
+    sm_myRobotHw->init( sm_node);
 
-    sm_myRobotHw->init();
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -125,15 +129,16 @@ void ROS_server::simulationEnded()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void ROS_server::spinOnce()
 {
-	// Disable error reporting (it is enabled in the service processing part, but we don't want error reporting for publishers/subscribers)
-	int errorModeSaved;
-	simGetIntegerParameter(sim_intparam_error_report_mode,&errorModeSaved);
-	simSetIntegerParameter(sim_intparam_error_report_mode,sim_api_errormessage_ignore);
+    // Disable error reporting (it is enabled in the service processing part, but we don't want error reporting for publishers/subscribers)
+    int errorModeSaved;
+    simGetIntegerParameter(sim_intparam_error_report_mode,&errorModeSaved);
+    simSetIntegerParameter(sim_intparam_error_report_mode,sim_api_errormessage_ignore);
 
-	//Process all requested services and topic subscriptions
+    //Process all requested services and topic subscriptions
     ros::spinOnce(); //check what happened if thgis commented as the HWroscontrol has asyn spinner, so it should not be affected
 
-	// Restore previous error report mode:
+    // Restore previous error report mode:
     simSetIntegerParameter(sim_intparam_error_report_mode,errorModeSaved);
 }
+
 
