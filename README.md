@@ -17,3 +17,6 @@ This package contains a ros_control back end for coppeliasim (i.e. ~ gazebo_ros_
    * then start the simulation in coppeliasim
    * create configuration [yaml] file for your controller 
    * use current launch file to load your load ros_controller 
+
+#### Notes:
+   *  currenlty, both position and velocity controllers works properly. but the effort controller not properly working!
