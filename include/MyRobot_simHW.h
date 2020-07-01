@@ -1,3 +1,20 @@
+#pragma once
+#include <ros/ros.h>
+
+// ros_control
+#include <control_toolbox/pid.h>
+#include <hardware_interface/joint_command_interface.h>
+#include <hardware_interface/robot_hw.h>
+#include <joint_limits_interface/joint_limits.h>
+#include <joint_limits_interface/joint_limits_interface.h>
+#include <joint_limits_interface/joint_limits_rosparam.h>
+#include <joint_limits_interface/joint_limits_urdf.h>
+#include <hardware_interface/joint_state_interface.h>
+
+
+#include <transmission_interface/transmission_parser.h>
+#include <urdf/model.h>
+
 namespace coppeliasim_ros_control
 {
   /// \brief This is the hardware interface for MyRobot simulated in sim.
