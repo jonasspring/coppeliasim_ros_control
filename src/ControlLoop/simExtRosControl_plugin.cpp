@@ -7,8 +7,7 @@
 
 #define PLUGIN_VERSION 1
 
-std::string simExtRosControlSimple_pluginName = "simExtRosControlSimple";
-
+std::string simExtRosControl_pluginName = "simExtRosControl";
 LIBRARY simLib; // the coppeliasim library that we will dynamically load and bind
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16,61 +15,54 @@ LIBRARY simLib; // the coppeliasim library that we will dynamically load and bin
 SIM_DLLEXPORT unsigned char simStart(void* reservedPointer,int reservedInt)
 {
 	// Dynamically load and bind coppeliasim functions:
-	// ******************************************
-	// 1. Figure out this plugin's directory:
 	char curDirAndFile[1024];
 	getcwd(curDirAndFile, sizeof(curDirAndFile));
-
 	std::string currentDirAndPath(curDirAndFile);
 
-	// 2. Append the coppeliasim library's name:
+	// Append the coppeliasim library's name:
 	std::string temp(currentDirAndPath);
 	temp+="/libcoppeliaSim.so";
 
-	// 3. Load the coppeliasim library:
+	// Load the coppeliasim library:
 	simLib=loadSimLibrary(temp.c_str());
 	if (simLib==NULL)
 	{
-        std::cout << "Error, could not find or correctly load the coppeliasim library. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
+	    std::cout << "Error, could not find or correctly load the coppeliasim library. Cannot start '" << simExtRosControl_pluginName << "' plugin.\n";
 		return(0); // Means error, coppeliasim will unload this plugin
 	}
 	if (getSimProcAddresses(simLib)==0)
 	{
-        std::cout << "Error, could not find all required functions in the coppeliasim library. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
+	    std::cout << "Error, could not find all required functions in the coppeliasim library. Cannot start '" << simExtRosControl_pluginName << "' plugin.\n";
 		unloadSimLibrary(simLib);
 		return(0); // Means error, coppeliasim will unload this plugin
 	}
-	// ******************************************
 
 	// Check the version of coppeliasim:
-	// ******************************************
-	int simVer;
-	simGetIntegerParameter(sim_intparam_program_version,&simVer);
-	if (simVer<30102) // if coppeliasim version is smaller than 3.01.02
+	int sim_ver;
+	simGetIntegerParameter(sim_intparam_program_version,&sim_ver);
+	if (sim_ver<30102) // if coppeliasim version is smaller than 3.01.02
 	{
-        std::cout << "Sorry, your coppeliasim copy is somewhat old. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
+	    std::cout << "Sorry, your coppeliasim copy is somewhat old. Cannot start '" << simExtRosControl_pluginName << "' plugin.\n";
 		unloadSimLibrary(simLib);
 		return(0); // Means error, coppeliasim will unload this plugin
 	}
-	// ******************************************
-	
-	
+
 	// Initialize the ROS part:
 	if(!ROS_server::initialize()) 
 	{
-        std::cout << "ROS master is not running. Cannot start '" << simExtRosControlSimple_pluginName << "' plugin.\n";
+	    std::cout << "ROS master is not running. Cannot start '" << simExtRosControl_pluginName << "' plugin.\n";
 		return (0); //If the master is not running then the plugin is not loaded.
 	}
 
 	return(PLUGIN_VERSION); // initialization went fine, we return the version number of this plugin (can be queried with simGetModuleName)
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // This is the plugin end routine (called just once, when coppeliasim is ending, i.e. releasing this plugin):
 SIM_DLLEXPORT void simEnd()
 {
 	ROS_server::shutDown();	// shutdown the ROS_server
-
 	unloadSimLibrary(simLib); // release the library
 }
 
@@ -85,36 +77,31 @@ SIM_DLLEXPORT void* simMessage(int message,int* auxiliaryData,void* customData,i
 	simSetIntegerParameter(sim_intparam_error_report_mode,sim_api_errormessage_ignore);
 	void* retVal=NULL;
 
-	// Here we can intercept many messages from coppeliasim (actually callbacks). Only the most important messages are listed here:
-
+	// Here we can intercept many messages from coppeliasim (actually callbacks). 
+	// Only the most important messages are listed here:
 	if (message==sim_message_eventcallback_instancepass)
 	{ 
 		// This message is sent each time the scene was rendered (well, shortly after) (very often)
 		// When a simulation is not running, but you still need to execute some commands, then put some code here
-
 		ROS_server::instancePass();
 	}
 
 	if (message==sim_message_eventcallback_mainscriptabouttobecalled)
 	{ 
 		// Main script is about to be run (only called while a simulation is running (and not paused!))
-		//
 		// This is a good location to execute simulation commands
-		
 		ROS_server::mainScriptAboutToBeCalled();
 	}
 
 	if (message==sim_message_eventcallback_simulationabouttostart)
 	{ 
 	    // Simulation is about to start
-		
 		ROS_server::simulationAboutToStart();
 	}
 
 	if (message==sim_message_eventcallback_simulationended)
 	{ 
 		// Simulation just ended
-		
 		ROS_server::simulationEnded();
 	}
 
