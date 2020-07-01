@@ -8,11 +8,12 @@ This package contains a ros_control back end for coppeliasim (i.e. ~ gazebo_ros_
 ### HOW TO RUN IT:
 ### general plugin/master branch:
    * clone the repository in your <workspace>/src folder
-   * build the newly cloned package
-   * once built, you need to copy this plugin file libsimExtRosControl.so from your <workspace>/devel/lib folder to coppeliasim's main folder (along all the other plugins)
+   * compile the package
+   * once compiled, you need to copy the plugin file libsimExtRosControl.so from your <workspace>/devel/lib folder to coppeliasim's main folder (along all the other plugins)
    * start a terminal with roscore
    * then start coppeliasim 
       - check that plugin libsimExtRosControl.so is correctly loaded in coppeliasim's trace (i.e. in coppeliasim's console)
-   * load a scene from coppeliasim folder and start the simulation in coppeliasim
-   * create controller.yaml configuration file 
-   * use current launch file to load your robot urdf file 
+   * load any robot in coppeliasim, load the robot_description to the param server.
+   * then start the simulation in coppeliasim
+   * create configuration [yaml] file for your controller 
+   * use current launch file to load your load ros_controller 
