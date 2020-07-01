@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
+  <param name="/use_sim_time" value="true"/>
   <param name="robot_description" command="$(find xacro)/xacro.py 'PATH_TO_ROBOT_URDF/XACRO_FILE'" />
 
   <!-- Robot state publisher node -->
