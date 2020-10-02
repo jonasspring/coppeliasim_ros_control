@@ -1,0 +1,43 @@
+position_joint_trajectory_controller:
+  type: position_controllers/JointTrajectoryController
+  joints:
+    - Panda_joint1
+    - Panda_joint2
+    - Panda_joint3
+    - Panda_joint4
+    - Panda_joint5
+    - Panda_joint6
+    - Panda_joint7
+  constraints:
+    goal_time: 0.5
+    panda_joint1:
+      goal: 0.05
+    panda_joint2:
+      goal: 0.05
+    panda_joint3:
+      goal: 0.05
+    panda_joint4:
+      goal: 0.05
+    panda_joint5:
+      goal: 0.05
+    panda_joint6:
+      goal: 0.05
+    panda_joint7:
+      goal: 0.05
+
+franka_state_controller:
+  type: franka_control/FrankaStateController
+  publish_rate: 30  # [Hz]
+  joint_names:
+    - Panda_joint1
+    - Panda_joint2
+    - Panda_joint3
+    - Panda_joint4
+    - Panda_joint5
+    - Panda_joint6
+    - Panda_joint7
+  arm_id: Panda
+
+model_example_controller:
+    type: rmr_panda_controllers/ModelExampleController
+    arm_id: Panda

@@ -2,7 +2,7 @@
 <launch>
 
   <param name="/use_sim_time" value="true"/>
-  <param name="robot_description" command="$(find xacro)/xacro.py 'PATH_TO_ROBOT_URDF/XACRO_FILE'" />
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find franka_panda_description)/robots/panda_arm_hand.urdf.xacro" />
 
   <!-- Robot state publisher node -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
@@ -11,8 +11,8 @@
   </node>
 
   <!-- Start controllers -->
-  <rosparam file="PATH_TO_CONTROLLER_CONFIGURATION_FILE.YAML" command="load"/> 
+  <rosparam file="$(find rmr_panda_controllers)/config/rmr_panda_controllers.yaml" command="load"/> 
 
-  <node name="controller_manager_spawner" pkg="controller_manager" type="spawner" args="CONTROLLER" />
+  <!--node name="controller_manager_spawner" pkg="controller_manager" type="spawner" args="CONTROLLER" /-->
 
 </launch>

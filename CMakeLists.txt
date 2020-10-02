@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(coppeliasim_ros_control)
 
-find_package(catkin REQUIRED COMPONENTS roscpp vrep_common vrep_skeleton_msg_and_srv controller_manager transmission_interface control_toolbox joint_limits_interface urdf hardware_interface)
+find_package(catkin REQUIRED COMPONENTS roscpp vrep_common vrep_skeleton_msg_and_srv controller_manager transmission_interface control_toolbox joint_limits_interface urdf hardware_interface
+  franka_hw franka_simulation)
 
 ################################################
 # List sources.
@@ -23,9 +24,11 @@ set(${PROJECT_NAME}_sources
     src/ControlLoop/MyRobot_simHW.cpp
 )
 
+find_package(Franka 0.7.0 REQUIRED)
+
 catkin_package(
                CATKIN_DEPENDS roscpp rosconsole std_msgs roslib
-               DEPENDS roscpp rosconsole std_msgs roslib)
+               DEPENDS roscpp rosconsole std_msgs roslib Franka franka_simulation franka_hw)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
@@ -46,3 +49,17 @@ target_link_libraries(simExtRosControl
     boost_system
    ${catkin_LIBRARIES}
 )
+
+target_link_libraries(simExtRosControl
+  ${Franka_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${franka_simulation_LIBRARIES}
+  ${franka_hw_LIBRARIES}
+)
+
+## Installation
+#install(TARGETS simExtRosControl
+#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)

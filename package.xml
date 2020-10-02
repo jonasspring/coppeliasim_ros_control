@@ -11,6 +11,9 @@
   <author email="antoinerennuit@hotmail.com">Antoine Rennuit</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>franka_hw</build_depend>
+  <build_depend>libfranka</build_depend>
+  <build_depend>franka_simulation</build_depend>
 
   <build_depend>roscpp</build_depend>
   <build_depend>std_msgs</build_depend>
@@ -19,5 +22,9 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>rosconsole</run_depend>
   <run_depend>roslib</run_depend>
+  <run_depend>franka_hw</run_depend>
+  <run_depend>libfranka</run_depend>
+  <run_depend>franka_simulation</run_depend>
+
 
 </package>

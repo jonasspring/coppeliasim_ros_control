@@ -6,6 +6,7 @@
 #include <iostream>
 
 
+
 namespace coppeliasim_ros_control
 {
 
@@ -50,6 +51,7 @@ namespace coppeliasim_ros_control
     joint_effort_command_.resize(n_dof_);
     joint_position_command_.resize(n_dof_);
     joint_velocity_command_.resize(n_dof_);
+
 
     
     // Initialize values for each joint
@@ -110,6 +112,9 @@ namespace coppeliasim_ros_control
       joint_position_command_[j] = 0.0;
       joint_velocity_command_[j] = 0.0;
 
+      //init Parameters
+      initParameters(nh);
+
       const std::string& hardware_interface = joint_interfaces.front();
 
       // Debug
@@ -164,6 +169,10 @@ namespace coppeliasim_ros_control
         ROS_ERROR_STREAM("No handle available for '" << joint_names_[j] << "' in coppeliasim" );
       else
         sim_joints_.push_back(simJointsHandle);
+
+      float pos;
+      simGetJointPosition(sim_joints_[j], &pos);
+      joint_position_command_[j] = pos;
 
 
       // set joint mode to toraue/force mode
@@ -230,20 +239,85 @@ namespace coppeliasim_ros_control
       } // end of switch
     } //end of for_loop j till size of transmission
 
+    //setup Franka Interfaces
+    setupFrankaStateInterface(robot_state_);
+
     // Register all available interfaces
     registerInterface(&js_interface_);
     registerInterface(&ej_interface_);
     registerInterface(&pj_interface_);
     registerInterface(&vj_interface_);
 
+//    std::unique_ptr<franka::Robot> robot_;
+//    std::unique_ptr<franka::Model> model_;
+//    franka::RealtimeConfig realtime_config_ = franka::RealtimeConfig::kEnforce;
+//    try{
+//    robot_ = std::make_unique<franka::Robot>("127.0.0.1", realtime_config_);
+//    model_ = std::make_unique<franka::Model>(robot_->loadModel());
+//    }
+//    catch(...){
+
+//    }
+//    if (robot_){
+//      ROS_DEBUG_STREAM("robot here");
+//    }
+//    else
+//       ROS_DEBUG_STREAM("nope");
+
+    //Model_Sim model_test2;
+    //Model_Sim& model_sim = model_test2;
+
+    //franka::Model* model_ = model_sim;
+    //franka_hw::FrankaModelHandle model_handle(arm_id_ + "_model", model_sim, robot_state_);
+    //boost::shared_ptr<franka_hw::FrankaModelHandle> handle;
+    //FrankaModelHandle_Sim model_handle_sim();
+    //franka::Model* model;
+    //franka_hw::FrankaModelHandle model_handle(arm_id_ + "_model", *model, robot_state_);
+    //handle.reset(new FrankaModelHandle_Sim());
+    //franka_model_interface_.registerHandle(model_handle);
+    //registerInterface(&franka_model_interface_);
+    //franka::Network network = franka::Network(("127.0.0.1", 7777));
+    //franka::Model model(network);
+
+//    franka::Model* model = nullptr;
+//    franka_hw::FrankaModelHandle model_handle(arm_id_ + "_model", *model, robot_state_);
+//    FrankaModelHandle_Sim model_handle2(arm_id_ + "_model", *model, robot_state_);
+//    franka_model_interface_2.registerHandle(model_handle2);
+//    registerInterface(&franka_model_interface_2);
+
+
+//    std::unique_ptr<franka_hw::FrankaModelHandle> model_handle_5 = std::make_unique<FrankaModelHandle_Sim>(
+//          franka_model_interface_2.getHandle(arm_id_ + "_model"));
+//    // franka_hw::FrankaModelHandle model_handle_5 = franka_model_interface_2.getHandle(arm_id_ + "_model");
+
+//    ROS_DEBUG_STREAM( model_handle_5->getName());
+//    std::array<double, 49> mass = model_handle_5->getMass();
+//    ROS_DEBUG_STREAM("mass :" << mass[1]);
+
+    FrankaModelHandle_Sim model_handle(arm_id_ + "_model", robot_state_);
+    franka_model_interface_2.registerHandle(model_handle);
+    registerInterface(&franka_model_interface_2);
+
     return true;
   } // end of init
+
+
+  bool RobotSimHW::initParameters(ros::NodeHandle* robot_hw_nh) {
+    if (!robot_hw_nh->getParam("arm_id", arm_id_)) {
+      ROS_ERROR("Invalid or no arm_id parameter provided");
+      return false;
+    }
+
+  }
 
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   bool RobotSimHW::read()
   {
     ROS_DEBUG_ONCE("RobotSimHW::read");
+
+    simulation_time_ = simGetSimulationTime();
+
     for(unsigned int j=0; j < n_dof_; j++)
     {
       float pos, vel, eff;
@@ -254,8 +328,16 @@ namespace coppeliasim_ros_control
          
       joint_position_[j] = pos;
       joint_velocity_[j] = vel;
-      joint_effort_[j] = eff;
+      joint_effort_[j] = -1 * eff;
+      //ROS_DEBUG_STREAM("pos"<< pos<<"vel"<<vel<<"eff"<<eff);
     }
+
+    readRobotState();
+
+    //std::unique_ptr<franka_hw::FrankaStateHandle> franka_state_handle_ = std::make_unique<franka_hw::FrankaStateHandle>(
+        //franka_state_interface_.getHandle(arm_id_ + "_robot"));
+    //ROS_DEBUG_STREAM(franka_state_handle_->getRobotState());
+
     return true;
   } //end of read
 
@@ -286,15 +368,23 @@ namespace coppeliasim_ros_control
         case EFFORT:
         {
           ROS_DEBUG_STREAM_ONCE("EFFORT mode'" << joint_names_[j] << "' " );              
-          ROS_DEBUG_STREAM("EFFORT mode joint:'" << joint_names_[j] << "', effort_value= " << joint_effort_command_[j]);              
-          if (joint_effort_command_[j] > 0.0000)             
-            if (simSetJointTargetVelocity(sim_joints_[j], 10000.0) == -1)
-              ROS_DEBUG_STREAM_ONCE("sim_ros_control not able to set max_velcoity for '" << joint_names_[j] << "' " ); 
-          else
-            if (simSetJointTargetVelocity(sim_joints_[j], -10000.0) == -1)
-              ROS_DEBUG_STREAM_ONCE("sim_ros_control not able to set max_velcoity for '" << joint_names_[j] << "' " );     
+          //ROS_DEBUG_STREAM("EFFORT mode joint:'" << joint_names_[j] << "', effort_value= " << joint_effort_command_[j]);
+          if (joint_effort_command_[j] > 0.0000){
+            //ROS_DEBUG_STREAM("bigger");
+            if (simSetJointTargetVelocity(sim_joints_[j], 100.0) == -1)
+              ROS_DEBUG_STREAM("sim_ros_control not able to set max_velcoity for '" << joint_names_[j] << "' " );
+          }
+          else if (joint_effort_command_[j] < 0.0000){
+            //ROS_DEBUG_STREAM("smaller");
+            if (simSetJointTargetVelocity(sim_joints_[j], -100.0) == -1)
+              ROS_DEBUG_STREAM("sim_ros_control not able to set max_velcoity for '" << joint_names_[j] << "' " );
+          }
+          else {
+            if (simSetJointTargetVelocity(sim_joints_[j], 0.0) == -1)
+              ROS_DEBUG_STREAM("sim_ros_control not able to set max_velcoity for '" << joint_names_[j] << "' " );
+          }
 
-          if (simSetJointForce(sim_joints_[j], joint_effort_command_[j]) == -1)
+          if (simSetJointForce(sim_joints_[j], fabs(joint_effort_command_[j])) == -1)
             ROS_DEBUG_STREAM_ONCE("sim_ros_control not able to set force/torque for '" << joint_names_[j] <<"' ");
         }
         break;
@@ -311,8 +401,8 @@ namespace coppeliasim_ros_control
   {
     std::string urdf_string, result;
     // search and wait for robot_description on param server
-    while (urdf_string.empty())
-    {
+    //while (urdf_string.empty())
+
       if (nh->searchParam(param_name, urdf_string)) {
         if(!nh->getParam(urdf_string, result)) 
           ROS_FATAL("THIS SHOULD NEVER BE PRINTED ... ?! (%s)", urdf_string.c_str());
@@ -321,7 +411,7 @@ namespace coppeliasim_ros_control
       }
       else
         ROS_DEBUG_ONCE("waiting '%s' to be loaded on the ROS parameter server", param_name.c_str());
-    }
+
     return result;
   }
 
@@ -332,6 +422,67 @@ namespace coppeliasim_ros_control
                         std::vector<transmission_interface::TransmissionInfo> &transmissions_)
   {
     transmission_interface::TransmissionParser::parse(urdf_string, transmissions_);
+    return true;
+  }
+
+  void RobotSimHW::setupFrankaStateInterface(franka::RobotState& robot_state) {
+    franka_hw::FrankaStateHandle franka_state_handle(arm_id_ + "_robot", robot_state);
+    franka_state_interface_.registerHandle(franka_state_handle);
+    registerInterface(&franka_state_interface_);
+  }
+
+//  void RobotSimHW::setupFrankaModelInterface(franka::RobotState& robot_state) {
+//    if (model_) {
+//      franka_hw::FrankaModelHandle model_handle(arm_id_ + "_model", *model_, robot_state);
+//      franka_model_interface_.registerHandle(model_handle);
+//      registerInterface(&franka_model_interface_);
+//    }
+//  }
+
+  bool RobotSimHW::readRobotState(){
+
+    double dt = simulation_time_ - robot_state_.time.toSec();
+    franka::Duration duration((uint64_t)(simulation_time_ * 1000));
+    robot_state_.time = duration;
+
+    //Set elbow
+    robot_state_.elbow[0] = joint_position_[2];
+    if (joint_position_[3] < 0){
+      robot_state_.elbow[1] = -1;
+    }
+    else{
+      robot_state_.elbow[1] = 1;
+    }
+
+    //Set elbow_d
+    float pos;
+    robot_state_.elbow_d[0] = joint_position_command_[2];
+    if (joint_position_command_[3] < 0){
+      robot_state_.elbow[1] = -1;
+    }
+    else{
+      robot_state_.elbow[1] = 1;
+    }
+
+    //Set tau_J :measured link-side torque
+    std::array<double, 7> old_joint_effort = robot_state_.tau_J;
+
+    for(unsigned int i=0; i < n_dof_; i++){
+      robot_state_.tau_J[i] = joint_effort_[i];
+      robot_state_.tau_J_d[i] = joint_effort_command_[i];
+      robot_state_.dtau_J[i] = (joint_effort_[i] - old_joint_effort[i])/dt;
+      robot_state_.q[i] = joint_position_[i];
+      robot_state_.q_d[i] = joint_position_command_[i];
+      robot_state_.dq[i] = joint_velocity_[i];
+      robot_state_.dq_d[i] = joint_velocity_command_[i];
+    }
+
+    //motor position -> here same as q
+    robot_state_.theta = robot_state_.q;
+
+    //robot mode hardcoded to move mode
+    robot_state_.robot_mode = franka::RobotMode::kMove;
+
     return true;
   }
 
