@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+
+ <!-- Starts a simple PID controller for joint positions, using the EffortJointInterface -->
+
+<rosparam file="$(find coppeliasim_ros_control)/config/panda_controller.yaml" command="load"/>
+<node name="arm_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn panda_controller" respawn="false" output="screen"/>
+
+
+ <!-- joint_state_controller -->
+  <rosparam file="$(find coppeliasim_ros_control)/config/joint_state_controller.yaml" command="load"/>
+  <node name="joint_state_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn joint_state_controller" respawn="false" output="screen"/>
+
+
+</launch>

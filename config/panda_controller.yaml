@@ -1,0 +1,33 @@
+panda_controller:
+
+#Effort controllers------------------
+  type: "effort_controllers/JointGroupPositionController"
+  joints: 
+    - Panda_joint1
+    - Panda_joint2
+    - Panda_joint3
+    - Panda_joint4
+    - Panda_joint5
+    - Panda_joint6
+    - Panda_joint7
+  Panda_joint1:
+    pid: {p: 0.6, i: 0.6, d: 5.0, i_clamp_min: -2, i_clamp_max: 2, antiwindup: true}
+    command: 0.0
+  Panda_joint2:
+    pid: {p: 80, i: 5, d: 5, i_clamp_min: -50.0, i_clamp_max: 50.0, antiwindup: true}
+    command: -0.8
+  Panda_joint3:
+    pid: {p: 50, i: 5, d: 5, i_clamp_min: -20, i_clamp_max: 20, antiwindup: true}
+    command: -0.2
+  Panda_joint4:
+    pid: {p: 40, i: 5, d: 10, i_clamp_min: -20, i_clamp_max: 20, antiwindup: true}
+    command: -2.0
+  Panda_joint5:
+    pid: {p: 12, i: 5, d: 0.4, i_clamp_min: -10, i_clamp_max: 10, antiwindup: true}
+    command: 0.0
+  Panda_joint6:
+    pid: {p: 0.0, i: 0.0, d: 0, i_clamp_min: -5.0, i_clamp_max: 5.0, antiwindup: true}
+    command: 2.3
+  Panda_joint7:
+    pid: {p: 0, i: 0, d: 0.0}
+    command: 1.0

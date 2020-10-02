@@ -165,8 +165,10 @@ namespace coppeliasim_ros_control
       ROS_DEBUG_STREAM("joint '"<< joint_names_[j]<< "' Handle number is: "<< simJointsHandle );   
 
       // case joint not found:
-      if (simJointsHandle == -1)
+      if (simJointsHandle == -1){
         ROS_ERROR_STREAM("No handle available for '" << joint_names_[j] << "' in coppeliasim" );
+        return false;
+      }
       else
         sim_joints_.push_back(simJointsHandle);
 
@@ -248,51 +250,7 @@ namespace coppeliasim_ros_control
     registerInterface(&pj_interface_);
     registerInterface(&vj_interface_);
 
-//    std::unique_ptr<franka::Robot> robot_;
-//    std::unique_ptr<franka::Model> model_;
-//    franka::RealtimeConfig realtime_config_ = franka::RealtimeConfig::kEnforce;
-//    try{
-//    robot_ = std::make_unique<franka::Robot>("127.0.0.1", realtime_config_);
-//    model_ = std::make_unique<franka::Model>(robot_->loadModel());
-//    }
-//    catch(...){
 
-//    }
-//    if (robot_){
-//      ROS_DEBUG_STREAM("robot here");
-//    }
-//    else
-//       ROS_DEBUG_STREAM("nope");
-
-    //Model_Sim model_test2;
-    //Model_Sim& model_sim = model_test2;
-
-    //franka::Model* model_ = model_sim;
-    //franka_hw::FrankaModelHandle model_handle(arm_id_ + "_model", model_sim, robot_state_);
-    //boost::shared_ptr<franka_hw::FrankaModelHandle> handle;
-    //FrankaModelHandle_Sim model_handle_sim();
-    //franka::Model* model;
-    //franka_hw::FrankaModelHandle model_handle(arm_id_ + "_model", *model, robot_state_);
-    //handle.reset(new FrankaModelHandle_Sim());
-    //franka_model_interface_.registerHandle(model_handle);
-    //registerInterface(&franka_model_interface_);
-    //franka::Network network = franka::Network(("127.0.0.1", 7777));
-    //franka::Model model(network);
-
-//    franka::Model* model = nullptr;
-//    franka_hw::FrankaModelHandle model_handle(arm_id_ + "_model", *model, robot_state_);
-//    FrankaModelHandle_Sim model_handle2(arm_id_ + "_model", *model, robot_state_);
-//    franka_model_interface_2.registerHandle(model_handle2);
-//    registerInterface(&franka_model_interface_2);
-
-
-//    std::unique_ptr<franka_hw::FrankaModelHandle> model_handle_5 = std::make_unique<FrankaModelHandle_Sim>(
-//          franka_model_interface_2.getHandle(arm_id_ + "_model"));
-//    // franka_hw::FrankaModelHandle model_handle_5 = franka_model_interface_2.getHandle(arm_id_ + "_model");
-
-//    ROS_DEBUG_STREAM( model_handle_5->getName());
-//    std::array<double, 49> mass = model_handle_5->getMass();
-//    ROS_DEBUG_STREAM("mass :" << mass[1]);
 
     FrankaModelHandle_Sim model_handle(arm_id_ + "_model", robot_state_);
     franka_model_interface_2.registerHandle(model_handle);
@@ -316,26 +274,34 @@ namespace coppeliasim_ros_control
   {
     ROS_DEBUG_ONCE("RobotSimHW::read");
 
-    simulation_time_ = simGetSimulationTime();
+    if (simulation_time_ = simGetSimulationTime() == -1){
+      ROS_ERROR_STREAM("No simulation time available");
+    };
 
-    for(unsigned int j=0; j < n_dof_; j++)
-    {
-      float pos, vel, eff;
-      if (simGetJointPosition(sim_joints_[j], &pos) == -1 ||
-          simGetObjectFloatParameter(sim_joints_[j], sim_jointfloatparam_velocity, &vel) == -1 || // Velocity.
-          simGetJointForce(sim_joints_[j], &eff) == -1)
-        ROS_ERROR_STREAM("RobotSimHW not able to get state for '" << joint_names_[j] << "'." );
-         
-      joint_position_[j] = pos;
-      joint_velocity_[j] = vel;
-      joint_effort_[j] = -1 * eff;
-      //ROS_DEBUG_STREAM("pos"<< pos<<"vel"<<vel<<"eff"<<eff);
+    if(!sim_joints_.empty()){
+      for(unsigned int j=0; j < n_dof_; j++)
+      {
+        float pos, vel, eff;
+        if (simGetJointPosition(sim_joints_[j], &pos) == -1 ||
+            simGetObjectFloatParameter(sim_joints_[j], sim_jointfloatparam_velocity, &vel) == -1 || // Velocity.
+            simGetJointForce(sim_joints_[j], &eff) == -1)
+          ROS_ERROR_STREAM("RobotSimHW not able to get state for '" << joint_names_[j] << "'." );
+
+
+        joint_position_[j] = pos;
+        joint_velocity_[j] = vel;
+        joint_effort_[j] = -1 * eff;
+        //ROS_DEBUG_STREAM("pos"<< pos<<"vel"<<vel<<"eff"<<eff);
+      }
+    }
+    else{
+      ROS_ERROR_STREAM("No joints found");
     }
 
     readRobotState();
 
     //std::unique_ptr<franka_hw::FrankaStateHandle> franka_state_handle_ = std::make_unique<franka_hw::FrankaStateHandle>(
-        //franka_state_interface_.getHandle(arm_id_ + "_robot"));
+    //franka_state_interface_.getHandle(arm_id_ + "_robot"));
     //ROS_DEBUG_STREAM(franka_state_handle_->getRobotState());
 
     return true;
@@ -344,17 +310,18 @@ namespace coppeliasim_ros_control
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   bool RobotSimHW::write()
   {
-    ROS_DEBUG_ONCE("RobotSimHW::write");   
-    for(unsigned int j=0; j < n_dof_; j++)
-    {
-      switch (joint_control_methods_[j])
+    ROS_DEBUG_ONCE("RobotSimHW::write");
+    if(!sim_joints_.empty()){
+      for(unsigned int j=0; j < n_dof_; j++)
       {
+        switch (joint_control_methods_[j])
+        {
         case POSITION:
-       {
+        {
           if (simSetJointTargetPosition(sim_joints_[j], joint_position_command_[j]) == -1)
             ROS_DEBUG_STREAM_ONCE("sim_ros_control not able to update position command for '" << joint_names_[j] << "' " );
         }
-        break;
+          break;
 
 
         case VELOCITY:
@@ -362,12 +329,12 @@ namespace coppeliasim_ros_control
           if (simSetJointTargetVelocity(sim_joints_[j], joint_velocity_command_[j]) == -1)
             ROS_DEBUG_STREAM("sim_ros_control not able to update velocity command for '" << joint_names_[j] << "' " );
         }
-        break;
+          break;
 
 
         case EFFORT:
         {
-          ROS_DEBUG_STREAM_ONCE("EFFORT mode'" << joint_names_[j] << "' " );              
+          ROS_DEBUG_STREAM_ONCE("EFFORT mode'" << joint_names_[j] << "' " );
           //ROS_DEBUG_STREAM("EFFORT mode joint:'" << joint_names_[j] << "', effort_value= " << joint_effort_command_[j]);
           if (joint_effort_command_[j] > 0.0000){
             //ROS_DEBUG_STREAM("bigger");
@@ -387,9 +354,13 @@ namespace coppeliasim_ros_control
           if (simSetJointForce(sim_joints_[j], fabs(joint_effort_command_[j])) == -1)
             ROS_DEBUG_STREAM_ONCE("sim_ros_control not able to set force/torque for '" << joint_names_[j] <<"' ");
         }
-        break;
-      } //en of switch
-    } //end of for_loop
+          break;
+        } //en of switch
+      } //end of for_loop
+    }
+    else{
+      ROS_ERROR_STREAM("No joints found");
+    }
     return true;
   } //end of write
 

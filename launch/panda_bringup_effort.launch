@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+
+<!--Loads the panda description with EffortJointInterface and starts the simulation-->
+
+  <arg name="use_sim_time" default="true"/>
+  <param name="/use_sim_time" value="$(arg use_sim_time)"/>
+
+    <arg name="limited" default="false"  doc="If true, limits joint range [-PI, PI] on all joints."/>
+
+  <node name="start_coppeliasim" pkg="coppeliasim_run" type="start_coppeliasim" args=" -s $(find coppeliasim_ros_control)/scene/panda_scene.ttt"  output="screen"/>
+
+
+  <!--arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface" /-->
+<arg name="transmission_hw_interface" default="hardware_interface/EffortJointInterface" />
+
+  <param unless="$(arg limited)" name="robot_description" command="$(find xacro)/xacro --inorder '$(find franka_panda_description)/robots/panda_arm.urdf.xacro' transmission_hw_interface:=$(arg transmission_hw_interface)" />
+
+<rosparam command="load" file="$(find coppeliasim_ros_control)/config/coppeliasim_ros_control.yaml" />
+
+<rosparam command="load" file="$(find coppeliasim_ros_control)/config/franka_default_controllers.yaml" />
+
+
+</launch>
